@@ -34,14 +34,18 @@ public class InvoiceController {
 
     @GetMapping(value = "/{clientId}/{cardId}")
     public List<PaymentModel> getExtract(@PathVariable Long clientId, @PathVariable Long cardId) {
-        verifyClientAndCard(clientId, cardId);
-
+        verifyCardAndClient(clientId, cardId);
         return paymentClient.getExtract(cardId);
+    }
+
+    private void verifyCardAndClient(Long clientId, Long cardId) {
+        CardDTO card = cardClient.getCard(cardId);
+        PersonModel clientById = personClient.getClientById(clientId);
     }
 
     @GetMapping(value = "/{clientId}/{cardId}/pagar")
     public InvoicePaidResponse payInvoice(@PathVariable Long clientId, @PathVariable Long cardId) {
-        verifyClientAndCard(clientId, cardId);
+        verifyCardAndClient(clientId, cardId);
         InvoicePaidModel invoicePaidModel = paymentClient.payInvoice(cardId);
         InvoiceEntity entity = mapper.from(invoicePaidModel);
         entity.setClientId(clientId);
@@ -55,24 +59,12 @@ public class InvoiceController {
 
     @GetMapping(value = "/{clientId}/{cardId}/expirar")
     public StatusResponse blockCardClient(@PathVariable Long clientId, @PathVariable Long cardId) {
-        verifyClientAndCard(clientId, cardId);
+        verifyCardAndClient(clientId, cardId);
         StatusResponse status = new StatusResponse();
         status.setStatus(cardClient.blockCard(cardId));
         return status;
     }
 
 
-    private void verifyClientAndCard(Long clientId, Long cardId) {
-        try{
-            CardDTO card = cardClient.getCard(cardId);
-        } catch (FeignException.NotFound e) {
-            throw new CardNotFoundException();
-        }
-        try {
-            PersonModel clientById = personClient.getClientById(clientId);
-        } catch (FeignException.NotFound e){
-            throw new ClientNotFoundException();
-        }
-    }
 
 }
